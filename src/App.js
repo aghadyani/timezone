@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // A curated and expanded list of timezones grouped by a more user-friendly name.
 const curatedTimezones = [
@@ -35,14 +35,17 @@ const App = () => {
   const [timezones, setTimezones] = useState([
     'Asia/Tehran',
     'Africa/Johannesburg',
-    'Europe/Amsterdam',
     'Europe/Zurich',
+    'Europe/Amsterdam',
     'Asia/Dhaka',
     'Europe/Skopje',
     'Europe/Bucharest',
     'America/New_York'
   ]);
 
+  // State for the new timezone input
+  const [newTimezone, setNewTimezone] = useState('');
+  
   // State to hold the current time, updated every second
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -62,9 +65,10 @@ const App = () => {
   }, []);
 
   // Function to add a new timezone to the list
-  const addTimezone = (tzToAdd) => {
-    if (tzToAdd && !timezones.includes(tzToAdd)) {
-      setTimezones([...timezones, tzToAdd]);
+  const addTimezone = () => {
+    if (newTimezone && !timezones.includes(newTimezone)) {
+      setTimezones([...timezones, newTimezone]);
+      setNewTimezone('');
     }
   };
 
@@ -113,7 +117,7 @@ const App = () => {
     }
   };
 
-  // Run conversion whenever input values changes
+  // Run conversion whenever input values change
   useEffect(() => {
     convertTime();
   }, [conversionTime, sourceTimezone, targetTimezone]);
@@ -124,88 +128,12 @@ const App = () => {
     return found ? found.name : tz;
   };
   
-  // A custom reusable component for the searchable dropdown
-  const SearchableDropdown = ({ value, onSelect, placeholder }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [searchQuery, setSearchQuery] = useState('');
-    const dropdownRef = useRef(null);
-
-    // Filter the timezone list based on the search query
-    const filteredTimezones = curatedTimezones.filter(tz =>
-      tz.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tz.timezone.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    // Handle clicks outside the dropdown to close it
-    useEffect(() => {
-      const handleClickOutside = (event) => {
-        if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-          setIsOpen(false);
-          setSearchQuery('');
-        }
-      };
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }, []);
-
-    const handleSelect = (tz) => {
-      onSelect(tz);
-      setIsOpen(false);
-      setSearchQuery('');
-    };
-
-    return (
-      <div className="relative w-full" ref={dropdownRef}>
-        <div 
-          onClick={() => setIsOpen(!isOpen)}
-          className="bg-gray-700 text-white p-3 rounded-xl border border-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-400 transition-colors w-full cursor-pointer flex justify-between items-center"
-        >
-          <span>{value ? getDisplayName(value) : placeholder}</span>
-          <svg className={`w-4 h-4 ml-2 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-          </svg>
-        </div>
-        
-        {isOpen && (
-          <div className="absolute z-20 w-full mt-1 bg-gray-800 rounded-xl shadow-lg border border-gray-600 max-h-60 overflow-y-auto">
-            <div className="p-2 sticky top-0 bg-gray-800">
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-gray-700 text-white p-2 rounded-lg border border-gray-600 focus:outline-none focus:ring-1 focus:ring-emerald-400"
-                onClick={(e) => e.stopPropagation()} // Prevent closing dropdown when clicking input
-                autoFocus
-              />
-            </div>
-            {filteredTimezones.length > 0 ? (
-              filteredTimezones.map((tz) => (
-                <div
-                  key={tz.timezone}
-                  onClick={() => handleSelect(tz.timezone)}
-                  className="p-3 hover:bg-gray-700 cursor-pointer transition-colors duration-150"
-                >
-                  {tz.name}
-                </div>
-              ))
-            ) : (
-              <div className="p-3 text-gray-500">No results found</div>
-            )}
-          </div>
-        )}
-      </div>
-    );
-  };
-  
   return (
     <div className="min-h-screen bg-gray-900 text-white p-8 font-sans">
       <div className="max-w-4xl mx-auto">
         {/* Main Title and Description */}
         <h1 className="text-4xl md:text-5xl font-bold text-center mb-4 text-emerald-400">
-        Global Time & Converter
+          Global Time & Converter
         </h1>
         <p className="text-center text-gray-400 mb-12">
           Track timezones and convert times with ease.
@@ -240,27 +168,47 @@ const App = () => {
             ))}
           </div>
 
-          {/* Add Timezone Input with Searchable Dropdown */}
-          <div className="mt-8">
-            <SearchableDropdown 
-              value={null}
-              onSelect={addTimezone}
-              placeholder="Select a timezone to add..."
-            />
+          {/* Add Timezone Input with a simple dropdown */}
+          <div className="mt-8 flex flex-col sm:flex-row items-center gap-4">
+            <select
+              value={newTimezone}
+              onChange={(e) => setNewTimezone(e.target.value)}
+              className="flex-grow w-full sm:w-auto bg-gray-700 text-white p-3 rounded-xl border border-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-400 transition-colors"
+            >
+              <option value="" disabled>Select a timezone...</option>
+              {curatedTimezones.map((tz) => (
+                <option key={tz.timezone} value={tz.timezone}>
+                  {tz.name}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={addTimezone}
+              className="w-full sm:w-auto px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl transition-colors duration-200 shadow-md hover:shadow-lg"
+            >
+              Add Timezone
+            </button>
           </div>
         </div>
 
         {/* Time Conversion Section */}
         <div className="bg-gray-800 p-6 rounded-3xl shadow-xl">
-          <h2 className="text-2xl font-bold mb-4 text-center text-teal-300">Time Conversion</h2>
+          <h2 className="2xl font-bold mb-4 text-center text-teal-300">Time Conversion</h2>
           <div className="flex flex-col md:flex-row items-center justify-center gap-6">
             <div className="flex flex-col items-center gap-2 w-full">
               <label htmlFor="source-tz" className="text-gray-400 text-sm">From Timezone</label>
-              <SearchableDropdown
+              <select
+                id="source-tz"
                 value={sourceTimezone}
-                onSelect={setSourceTimezone}
-                placeholder="Select source timezone..."
-              />
+                onChange={(e) => setSourceTimezone(e.target.value)}
+                className="bg-gray-700 text-white p-3 rounded-xl border border-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-400 transition-colors w-full"
+              >
+                {curatedTimezones.map((tz) => (
+                  <option key={tz.timezone} value={tz.timezone}>
+                    {tz.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="flex flex-col items-center gap-2">
               <label htmlFor="time-input" className="text-gray-400 text-sm">Time (24h format)</label>
@@ -275,11 +223,18 @@ const App = () => {
             <div className="text-xl font-bold text-gray-400 mt-4 md:mt-0">to</div>
             <div className="flex flex-col items-center gap-2 w-full">
               <label htmlFor="target-tz" className="text-gray-400 text-sm">To Timezone</label>
-              <SearchableDropdown
+              <select
+                id="target-tz"
                 value={targetTimezone}
-                onSelect={setTargetTimezone}
-                placeholder="Select target timezone..."
-              />
+                onChange={(e) => setTargetTimezone(e.target.value)}
+                className="bg-gray-700 text-white p-3 rounded-xl border border-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-400 transition-colors w-full"
+              >
+                {curatedTimezones.map((tz) => (
+                  <option key={tz.timezone} value={tz.timezone}>
+                    {tz.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
           <div className="mt-8 text-center">
