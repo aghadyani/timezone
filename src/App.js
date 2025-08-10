@@ -133,7 +133,7 @@ const App = () => {
       <div className="max-w-4xl mx-auto">
         {/* Main Title and Description */}
         <h1 className="text-4xl md:text-5xl font-bold text-center mb-4 text-emerald-400">
-          Global Time & Converter
+          The Great Global Time & Converter
         </h1>
         <p className="text-center text-gray-400 mb-12">
           Track timezones and convert times with ease.
